@@ -1,0 +1,17 @@
+# This template is for selecting a future stable release.
+release: v1.0.0
+dataset: FingerVeinSyn-5M
+status: pending_author_confirmation
+required_models:
+  - roi_rotated_faster_rcnn_r50_fpn
+  - roi_rotated_ssd_r50_fpn
+  - roi_rotated_yolo_r50_fpn
+  - seg_finger_shape_unet_r50
+  - seg_vein_pattern_unet_r50
+  - rec_mobilefacenet_large
+  - rec_iresnet100
+  - rec_convnext_small
+notes:
+  - Record actual epoch, source run, sample count, size and SHA256.
+  - Never replace an existing release asset without changing its filename.
+  - Use weights/manifest.json for the current candidate files.

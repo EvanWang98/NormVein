@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "normvein"
+version = "0.1.0"
+description = "Large-scale synthetic pretraining for finger-vein detection, segmentation, and recognition"
+readme = "README.md"
+requires-python = ">=3.9"
+authors = [
+  {name = "Yifan Wang"},
+  {name = "NormVein authors"},
+]
+dependencies = [
+  "numpy>=1.23",
+  "Pillow>=9.0",
+  "torch>=2.0",
+  "torchvision>=0.15",
+]
+
+[project.optional-dependencies]
+convnext = ["timm>=0.9"]
+train = ["tensorboard>=2.12", "tqdm>=4.65"]
+test = ["pytest>=7.0"]
+all = ["timm>=0.9", "tensorboard>=2.12", "tqdm>=4.65", "pytest>=7.0"]
+
+[project.scripts]
+normvein = "normvein.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+

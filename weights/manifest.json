@@ -1,0 +1,187 @@
+{
+  "format_version": 1,
+  "release": "candidate-v1",
+  "dataset": "FingerVeinSyn-5M",
+  "models": [
+    {
+      "model_id": "roi_rotated_faster_rcnn_r50_fpn",
+      "task": "roi_detection",
+      "architecture": "Rotated Faster R-CNN (ResNet-50-FPN)",
+      "input_size": [
+        300,
+        600
+      ],
+      "pretraining_samples": 500000,
+      "source_train_subset_ratio": 0.1,
+      "format_version": 1,
+      "dataset": "FingerVeinSyn-5M",
+      "source_epoch": 6,
+      "source_checkpoint": "ckpt/Det/epoch_6.pth",
+      "filename": "normvein_roi_rotated_faster_rcnn_r50_fpn_e006.pth",
+      "relative_path": "detection/normvein_roi_rotated_faster_rcnn_r50_fpn_e006.pth",
+      "size_bytes": 165726089,
+      "sha256": "73a2f728ed07020f0da737412e6af395838cf3529fa8f62f919e84fb52ddcdba",
+      "tensor_count": 348,
+      "parameter_count": 41403802
+    },
+    {
+      "model_id": "roi_rotated_ssd_r50_fpn",
+      "task": "roi_detection",
+      "architecture": "Rotated SSD (ResNet-50-FPN)",
+      "input_size": [
+        300,
+        600
+      ],
+      "pretraining_samples": 500000,
+      "source_train_subset_ratio": 0.1,
+      "format_version": 1,
+      "dataset": "FingerVeinSyn-5M",
+      "source_epoch": 10,
+      "source_checkpoint": "ckpt/Det/ssd_latest.pth",
+      "filename": "normvein_roi_rotated_ssd_r50_fpn_e010.pth",
+      "relative_path": "detection/normvein_roi_rotated_ssd_r50_fpn_e010.pth",
+      "size_bytes": 108996037,
+      "sha256": "20c1bf54230c27c095e6ba4136669350ca049f1ac32faaabeee71e355a29950c",
+      "tensor_count": 350,
+      "parameter_count": 27222017
+    },
+    {
+      "model_id": "roi_rotated_yolo_r50_fpn",
+      "task": "roi_detection",
+      "architecture": "Rotated YOLO-style detector (ResNet-50-FPN)",
+      "input_size": [
+        300,
+        600
+      ],
+      "pretraining_samples": 500000,
+      "source_train_subset_ratio": 0.1,
+      "format_version": 1,
+      "dataset": "FingerVeinSyn-5M",
+      "source_epoch": 10,
+      "source_checkpoint": "ckpt/Det/yolo_latest.pth",
+      "filename": "normvein_roi_rotated_yolo_r50_fpn_e010.pth",
+      "relative_path": "detection/normvein_roi_rotated_yolo_r50_fpn_e010.pth",
+      "size_bytes": 145580533,
+      "sha256": "df92e67437acc4f19b926a7cc336da0ee8005c37b5f89391c48db9c44d44d9db",
+      "tensor_count": 454,
+      "parameter_count": 36360097
+    },
+    {
+      "model_id": "seg_finger_shape_unet_r50",
+      "task": "finger_shape_segmentation",
+      "architecture": "U-Net (ResNet-50 encoder)",
+      "input_size": [
+        300,
+        600
+      ],
+      "percentile_normalization": null,
+      "paper_pretraining_samples": 500000,
+      "source_train_subset_ratio": 0.01,
+      "pretraining_samples": null,
+      "sample_count_status": "unverified; 1% of the published 5M dataset would be 50,000",
+      "format_version": 1,
+      "dataset": "FingerVeinSyn-5M",
+      "source_epoch": 10,
+      "source_checkpoint": "ckpt/Seg/FingerShape.pt",
+      "filename": "normvein_seg_finger_shape_unet_r50_e010.pth",
+      "relative_path": "segmentation/normvein_seg_finger_shape_unet_r50_e010.pth",
+      "size_bytes": 175757921,
+      "sha256": "bf0af2241807735e094af728716f19bb95d44869c3616dc37fd40a06028256b9",
+      "tensor_count": 368,
+      "parameter_count": 43911614
+    },
+    {
+      "model_id": "seg_vein_pattern_unet_r50",
+      "task": "vein_pattern_segmentation",
+      "architecture": "U-Net (ResNet-50 encoder)",
+      "input_size": [
+        100,
+        300
+      ],
+      "percentile_normalization": [
+        10,
+        90
+      ],
+      "paper_pretraining_samples": 500000,
+      "source_train_subset_ratio": 0.01,
+      "pretraining_samples": null,
+      "sample_count_status": "unverified; 1% of the published 5M dataset would be 50,000",
+      "format_version": 1,
+      "dataset": "FingerVeinSyn-5M",
+      "source_epoch": 10,
+      "source_checkpoint": "ckpt/Seg/FingerPattern.pt",
+      "filename": "normvein_seg_vein_pattern_unet_r50_e010.pth",
+      "relative_path": "segmentation/normvein_seg_vein_pattern_unet_r50_e010.pth",
+      "size_bytes": 175757985,
+      "sha256": "35c2531adc7bfd2e9c6938d6ef4c106090ad541e9155807f4469ae56aa946adc",
+      "tensor_count": 368,
+      "parameter_count": 43911614
+    },
+    {
+      "model_id": "rec_mobilefacenet_large",
+      "task": "recognition",
+      "architecture": "MobileFaceNet-Large",
+      "input_size": [
+        100,
+        300
+      ],
+      "embedding_dim": 512,
+      "paper_epoch": 200,
+      "pretraining_samples": 500000,
+      "format_version": 1,
+      "dataset": "FingerVeinSyn-5M",
+      "source_epoch": 50,
+      "source_checkpoint": "ckpt/Rec/MB/checkpoint_gpu_0MB_500k.pt",
+      "filename": "normvein_rec_mobilefacenet_large_e050.pth",
+      "relative_path": "recognition/normvein_rec_mobilefacenet_large_e050.pth",
+      "size_bytes": 25644229,
+      "sha256": "f13d063c112d11439ed0a266bebf239c1c7c11ffb2043bb8fa4107efc4f5d423",
+      "tensor_count": 606,
+      "parameter_count": 6363099
+    },
+    {
+      "model_id": "rec_iresnet100",
+      "task": "recognition",
+      "architecture": "iResNet-100",
+      "input_size": [
+        100,
+        300
+      ],
+      "embedding_dim": 512,
+      "paper_epoch": 100,
+      "pretraining_samples": 500000,
+      "format_version": 1,
+      "dataset": "FingerVeinSyn-5M",
+      "source_epoch": 44,
+      "source_checkpoint": "ckpt/Rec/RS/checkpoint_gpu_0R100_500k.pt",
+      "filename": "normvein_rec_iresnet100_e044.pth",
+      "relative_path": "recognition/normvein_rec_iresnet100_e044.pth",
+      "size_bytes": 312552391,
+      "sha256": "fbd558b8d7834cb0bcfdebca24d24f5a6d9d22a46b9631fca9fa032490ef5618",
+      "tensor_count": 925,
+      "parameter_count": 78069850
+    },
+    {
+      "model_id": "rec_convnext_small",
+      "task": "recognition",
+      "architecture": "ConvNeXt-Small",
+      "input_size": [
+        224,
+        224
+      ],
+      "embedding_dim": 512,
+      "paper_epoch": 300,
+      "pretraining_samples": 500000,
+      "format_version": 1,
+      "dataset": "FingerVeinSyn-5M",
+      "source_epoch": 100,
+      "source_checkpoint": "ckpt/Rec/VIT/checkpoint_gpu_0vit_500k.pt",
+      "filename": "normvein_rec_convnext_small_e100.pth",
+      "relative_path": "recognition/normvein_rec_convnext_small_e100.pth",
+      "size_bytes": 199495305,
+      "sha256": "f7db1606420b99c2af5fd9c8524cf026c0b40dc4b4f84392f83e31dd4a3bba47",
+      "tensor_count": 348,
+      "parameter_count": 49846881
+    }
+  ]
+}
