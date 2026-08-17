@@ -103,6 +103,21 @@ python scripts/train_detection.py --ann-file data/detection/annotations/train.js
 The trained files are written to `runs/` and can be used by the same inference
 commands above.
 
+## Citation
+
+```bibtex
+@article{wang2026normvein,
+  title={NormVein: Normalizing Finger-Vein Tasks with Large-Scale Synthetic Pretraining},
+  author={Wang, Yifan and Gui, Jie and Bi, Yuquan and Chen, Changsheng and Qiu, Luyi and Kot, Alex},
+  year={2026}
+}
+```
+
+## Contact
+
+- Yifan Wang: [230239767@seu.edu.cn](mailto:230239767@seu.edu.cn)
+- Jie Gui: [guijie@seu.edu.cn](mailto:guijie@seu.edu.cn)
+
 ## License
 
 [MIT License](LICENSE).
