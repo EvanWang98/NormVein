@@ -111,6 +111,14 @@ commands above.
   author={Wang, Yifan and Gui, Jie and Bi, Yuquan and Chen, Changsheng and Qiu, Luyi and Kot, Alex},
   year={2026}
 }
+
+@inproceedings{wang2025fingerveinsyn,
+  title={FingerVeinSyn-5M: A Million-Scale Dataset and Benchmark for Finger Vein Recognition},
+  author={Wang, Yifan and Gui, Jie and Yu, Baosheng and Li, Qi and Sun, Zhenan and Kannala, Juho and Zhao, Guoying},
+  booktitle={Proceedings of the 33rd ACM International Conference on Multimedia},
+  pages={13038--13045},
+  year={2025}
+}
 ```
 
 ## Contact
