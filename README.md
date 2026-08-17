@@ -137,6 +137,7 @@ metadata in `CITATION.cff` and cite FingerVeinSyn-5M as requested by its authors
 
 ## License
 
-The public code and model license is pending author confirmation. Third-party
-dependencies and FingerVeinSyn-5M remain under their respective licenses.
+NormVein code and released model artifacts are provided under the
+[MIT License](LICENSE). Third-party dependencies and FingerVeinSyn-5M remain
+under their respective licenses.
 

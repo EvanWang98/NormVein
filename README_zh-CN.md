@@ -73,4 +73,5 @@ python scripts/train_segmentation.py \
 - 当前 MobileFaceNet-Large、iResNet-100、ConvNeXt-S 权重分别来自第 50、44、100 epoch。
 - 两个分割 checkpoint 记录的训练子集比例是 `0.01`；若源数据确为 5M，则约为 5 万张，与论文 50 万张描述不一致，需作者在正式发布前确认。
 - `roi_rotated_yolo_r50_fpn` 是本仓库自定义 ResNet-50-FPN 检测器，不是 Ultralytics YOLOv8 权重。
-- 公开代码与模型的许可证仍需作者最终确认；确认前不要对外正式发布 Release。
+- NormVein 代码与发布的模型参数采用 [MIT License](LICENSE)；第三方依赖和
+  FingerVeinSyn-5M 仍遵循各自许可证。
