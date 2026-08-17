@@ -14,6 +14,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from PIL import Image
+from torch.cuda.amp import GradScaler, autocast
 from torch.utils.data import DataLoader, Dataset
 
 from normvein.models import build_model, model_spec
@@ -131,7 +132,7 @@ def main() -> None:
             parameters, lr=learning_rate, momentum=0.9, weight_decay=weight_decay
         )
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=epochs)
-    scaler = torch.amp.GradScaler("cuda", enabled=device.type == "cuda")
+    scaler = GradScaler(enabled=device.type == "cuda")
 
     for epoch in range(1, epochs + 1):
         backbone.train()
@@ -140,7 +141,7 @@ def main() -> None:
             images = images.to(device, non_blocking=True)
             labels = labels.to(device, non_blocking=True)
             optimizer.zero_grad(set_to_none=True)
-            with torch.amp.autocast(device.type, enabled=device.type == "cuda"):
+            with autocast(enabled=device.type == "cuda"):
                 embeddings = backbone(images)
                 logits = classifier(embeddings, labels)
                 loss = F.cross_entropy(logits, labels)
@@ -157,4 +158,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

@@ -96,25 +96,31 @@ def build_model(model_id: str, **kwargs):
             **kwargs,
         )
 
+    score_thresh = float(kwargs.pop("score_thresh", 0.05))
+    nms_thresh = float(kwargs.pop("nms_thresh", 0.5))
+    detections_per_img = int(kwargs.pop("detections_per_img", 100))
     common = {
         "image_size": (600, 300),
         "pretrained_backbone_path": None,
-        "score_thresh": float(kwargs.pop("score_thresh", 0.05)),
-        "nms_thresh": float(kwargs.pop("nms_thresh", 0.5)),
-        "detections_per_img": int(kwargs.pop("detections_per_img", 100)),
     }
     common.update(kwargs)
     if model_id == "roi_rotated_faster_rcnn_r50_fpn":
-        common.pop("score_thresh", None)
-        common.pop("nms_thresh", None)
-        common.pop("detections_per_img", None)
         return build_rotated_faster_rcnn(
             **common,
-            box_detections_per_img=int(kwargs.get("detections_per_img", 100)),
+            box_detections_per_img=detections_per_img,
         )
     if model_id == "roi_rotated_ssd_r50_fpn":
-        return build_rotated_ssd(**common)
+        return build_rotated_ssd(
+            **common,
+            score_thresh=score_thresh,
+            nms_thresh=nms_thresh,
+            detections_per_img=detections_per_img,
+        )
     if model_id == "roi_rotated_yolo_r50_fpn":
-        return build_rotated_yolo(**common)
+        return build_rotated_yolo(
+            **common,
+            score_thresh=score_thresh,
+            nms_thresh=nms_thresh,
+            detections_per_img=detections_per_img,
+        )
     raise AssertionError(model_id)
-

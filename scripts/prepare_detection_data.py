@@ -6,7 +6,7 @@ from pathlib import Path
 
 from PIL import Image
 
-from common import find_dataset_dirs, project_path, with_prefix
+from detection_common import find_dataset_dirs, project_path, with_prefix
 
 IMAGE_EXTS = [".png", ".jpg", ".jpeg", ".bmp", ".tif", ".tiff"]
 CATEGORY = {"id": 1, "name": "finger", "supercategory": "finger"}
@@ -182,7 +182,7 @@ def build_coco(items):
             annotation["joint_points"] = item["joint_points"]
         annotations.append(annotation)
     return {
-        "info": {"description": "FingerVeinSyn50K finger detection train set"},
+        "info": {"description": "FingerVeinSyn-5M finger detection train set"},
         "licenses": [],
         "images": images,
         "annotations": annotations,
@@ -192,9 +192,9 @@ def build_coco(items):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--dataset-root", default="../../dataset/FingerVeinSyn50K")
-    parser.add_argument("--out-dir", default="./data/fvsyn50k_coco")
-    parser.add_argument("--coco-image-prefix", default="./dataset/FingerVeinSyn50K/Images")
+    parser.add_argument("--dataset-root", default="./data/FingerVeinSyn-5M")
+    parser.add_argument("--out-dir", default="./data/detection-500k")
+    parser.add_argument("--coco-image-prefix", default="")
     parser.add_argument("--workers", type=int, default=8)
     parser.add_argument("--limit", type=int, default=None)
     args = parser.parse_args()

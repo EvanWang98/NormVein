@@ -1,4 +1,3 @@
-from .rotated_coco import FVSynRotatedCocoDataset
+from .rotated_coco import FVSynRotatedCocoDataset, collate_fn
 
-__all__ = ["FVSynRotatedCocoDataset"]
-
+__all__ = ["FVSynRotatedCocoDataset", "collate_fn"]

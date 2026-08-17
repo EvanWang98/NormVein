@@ -12,22 +12,24 @@ from torch.nn.parallel import DistributedDataParallel
 from torch.utils.data import DataLoader, Sampler
 
 
-TOOL_DIR = Path(__file__).resolve().parent
-DETECTOR_DIR = TOOL_DIR.parent
-PROJECT_DIR = DETECTOR_DIR.parent
+SCRIPT_DIR = Path(__file__).resolve().parent
+REPO_DIR = SCRIPT_DIR.parent
+SRC_DIR = REPO_DIR / "src"
 
 
 def ensure_import_path():
-    for item in [str(PROJECT_DIR), str(DETECTOR_DIR)]:
+    for item in [str(SRC_DIR), str(REPO_DIR)]:
         if item and item not in sys.path:
             sys.path.insert(0, item)
 
 
 def resolve_path(path):
+    if path is None:
+        return None
     path = Path(path)
     candidates = [path]
     if not path.is_absolute():
-        candidates.extend([DETECTOR_DIR / path, PROJECT_DIR / path])
+        candidates.extend([REPO_DIR / path])
     for candidate in candidates:
         if candidate.exists():
             return candidate
@@ -112,7 +114,7 @@ class RandomSubsetDistributedSampler(Sampler):
 
 def build_dataloader(args, rank, world_size):
     ensure_import_path()
-    from detector_pretrain.datasets import FVSynRotatedCocoDataset, collate_fn
+    from normvein.data import FVSynRotatedCocoDataset, collate_fn
 
     dataset = FVSynRotatedCocoDataset(
         ann_file=args.ann_file,
@@ -121,7 +123,7 @@ def build_dataloader(args, rank, world_size):
         angle_sign=args.angle_sign,
         train=True,
         random_flip=not args.no_random_flip,
-        root_dir=DETECTOR_DIR,
+        root_dir=REPO_DIR,
     )
     sampler = RandomSubsetDistributedSampler(
         dataset,
@@ -145,20 +147,29 @@ def build_dataloader(args, rank, world_size):
 
 def build_model(args, device):
     ensure_import_path()
-    from detector_pretrain.models import build_rotated_ssd
+    from normvein.models.detection import build_rotated_faster_rcnn
 
     weights_path = resolve_path(args.pretrained_backbone)
-    model = build_rotated_ssd(
+    model = build_rotated_faster_rcnn(
         image_size=(args.image_width, args.image_height),
+        roi_pool_size=args.roi_pool_size,
+        roi_chunk_size=args.roi_chunk_size,
+        rpn_pre_nms_top_n_train=args.rpn_pre_nms_top_n_train,
+        rpn_pre_nms_top_n_test=args.rpn_pre_nms_top_n_test,
+        rpn_post_nms_top_n_train=args.rpn_post_nms_top_n_train,
+        rpn_post_nms_top_n_test=args.rpn_post_nms_top_n_test,
+        box_batch_size_per_image=args.box_batch_size_per_image,
+        box_positive_fraction=args.box_positive_fraction,
+        box_detections_per_img=args.box_detections_per_img,
+        bbox_loss_weight=args.bbox_loss_weight,
+        bbox_loss_beta=args.bbox_loss_beta,
+        min_area_ratio=args.min_area_ratio,
+        area_reg_weight=args.area_reg_weight,
         pretrained_backbone_path=str(weights_path) if weights_path else None,
         trainable_backbone_layers=args.trainable_backbone_layers,
-        score_thresh=args.score_thresh,
-        nms_thresh=args.nms_thresh,
-        detections_per_img=args.detections_per_img,
-        bbox_loss_weight=args.bbox_loss_weight,
-        neg_pos_ratio=args.neg_pos_ratio,
     )
     return model.to(device)
+
 
 def save_checkpoint(path, model, optimizer, scheduler, scaler, epoch, args):
     raw_model = model.module if hasattr(model, "module") else model
@@ -223,6 +234,8 @@ def train_one_epoch(model, loader, optimizer, scaler, device, epoch, args):
             stats = "  ".join(f"{key}={running[key] / count:.4f}" for key in sorted(running))
             lr = optimizer.param_groups[0]["lr"]
             print(f"epoch={epoch} step={step}/{len(loader)} lr={lr:.6g} {stats}", flush=True)
+        if args.dry_run:
+            break
 
     elapsed = time.time() - start
     return {key: value / max(1, len(loader)) for key, value in running.items()}, elapsed
@@ -233,7 +246,7 @@ def launch_distributed_if_needed(args):
         return False
     env = os.environ.copy()
     env["CUDA_VISIBLE_DEVICES"] = args.cuda_visible_devices
-    pythonpath = str(PROJECT_DIR)
+    pythonpath = str(SRC_DIR)
     if env.get("PYTHONPATH"):
         pythonpath = pythonpath + os.pathsep + env["PYTHONPATH"]
     env["PYTHONPATH"] = pythonpath
@@ -254,12 +267,12 @@ def launch_distributed_if_needed(args):
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--ann-file", default="./tools/data/fvsyn50k_coco/annotations/train.json")
+    parser.add_argument("--ann-file", default="./data/detection-500k/annotations/train.json")
     parser.add_argument("--image-root", default=None)
-    parser.add_argument("--output-dir", default="./work_dirs/rotated_ssd")
-    parser.add_argument("--pretrained-backbone", default="./weight/resnet50-0676ba61.pth")
+    parser.add_argument("--output-dir", default="./runs/detection/rotated_faster_rcnn")
+    parser.add_argument("--pretrained-backbone", default=None)
     parser.add_argument("--epochs", type=int, default=10)
-    parser.add_argument("--batch-size", type=int, default=16)
+    parser.add_argument("--batch-size", type=int, default=32)
     parser.add_argument("--num-workers", type=int, default=4)
     parser.add_argument("--subset-ratio", type=float, default=0.1)
     parser.add_argument("--lr", type=float, default=0.005)
@@ -271,23 +284,32 @@ def parse_args():
     parser.add_argument("--amp", action="store_true")
     parser.add_argument("--resume", default=None)
     parser.add_argument("--seed", type=int, default=2048)
-    parser.add_argument("--gpus", type=int, default=3)
-    parser.add_argument("--cuda-visible-devices", default="2,4,5")
+    parser.add_argument("--gpus", type=int, default=1)
+    parser.add_argument("--cuda-visible-devices", default="0")
     parser.add_argument("--master-port", type=int, default=15656)
     parser.add_argument("--device", default="cuda")
     parser.add_argument("--image-width", type=int, default=600)
     parser.add_argument("--image-height", type=int, default=300)
     parser.add_argument("--angle-sign", type=float, default=-1.0)
-    parser.add_argument("--score-thresh", type=float, default=0.05)
-    parser.add_argument("--nms-thresh", type=float, default=0.5)
-    parser.add_argument("--detections-per-img", type=int, default=100)
+    parser.add_argument("--roi-pool-size", type=int, default=7)
+    parser.add_argument("--roi-chunk-size", type=int, default=128)
+    parser.add_argument("--rpn-pre-nms-top-n-train", type=int, default=200)
+    parser.add_argument("--rpn-pre-nms-top-n-test", type=int, default=100)
+    parser.add_argument("--rpn-post-nms-top-n-train", type=int, default=50)
+    parser.add_argument("--rpn-post-nms-top-n-test", type=int, default=25)
+    parser.add_argument("--box-batch-size-per-image", type=int, default=128)
+    parser.add_argument("--box-positive-fraction", type=float, default=0.25)
+    parser.add_argument("--box-detections-per-img", type=int, default=5)
     parser.add_argument("--bbox-loss-weight", type=float, default=1.0)
+    parser.add_argument("--bbox-loss-beta", type=float, default=1.0 / 9.0)
+    parser.add_argument("--min-area-ratio", type=float, default=0.25)
+    parser.add_argument("--area-reg-weight", type=float, default=0.1)
     parser.add_argument("--trainable-backbone-layers", type=int, default=None)
     parser.add_argument("--no-random-flip", action="store_true")
     parser.add_argument("--log-interval", type=int, default=50)
     parser.add_argument("--dry-run", action="store_true")
-    parser.add_argument("--neg-pos-ratio", type=int, default=3)
     return parser.parse_args()
+
 
 def main():
     args = parse_args()
@@ -307,15 +329,22 @@ def main():
     output_dir = resolve_path(args.output_dir)
     if is_main_process():
         output_dir.mkdir(parents=True, exist_ok=True)
-        print(f"model: rotated_ssd", flush=True)
+        print(f"model: rotated_faster_rcnn", flush=True)
         print(f"ann_file: {resolve_path(args.ann_file)}", flush=True)
         print(f"output_dir: {output_dir}", flush=True)
         print(f"world_size: {world_size}, batch_size_per_gpu: {args.batch_size}, subset_ratio: {args.subset_ratio}", flush=True)
-        print(f"score_thresh: {args.score_thresh}, nms_thresh: {args.nms_thresh}, detections_per_img: {args.detections_per_img}", flush=True)
-        print(f"neg_pos_ratio: {args.neg_pos_ratio}", flush=True)
+        print(f"rpn_pre_nms_top_n: train={args.rpn_pre_nms_top_n_train}, test={args.rpn_pre_nms_top_n_test}", flush=True)
+        print(f"rpn_post_nms_top_n: train={args.rpn_post_nms_top_n_train}, test={args.rpn_post_nms_top_n_test}", flush=True)
+        print(f"box_sampling: batch_size_per_image={args.box_batch_size_per_image}, positive_fraction={args.box_positive_fraction}", flush=True)
+        print(f"box_detections_per_img: {args.box_detections_per_img}, roi_chunk_size: {args.roi_chunk_size}", flush=True)
+        print(f"area_regularization: min_area_ratio={args.min_area_ratio}, area_reg_weight={args.area_reg_weight}", flush=True)
 
     dataset, sampler, loader = build_dataloader(args, rank, world_size)
     model = build_model(args, device)
+    if is_main_process():
+        anchor_generator = model.detector.rpn.anchor_generator
+        print(f"rpn_anchor_sizes: {anchor_generator.sizes}", flush=True)
+        print(f"rpn_anchor_aspect_ratios_h_over_w: {anchor_generator.aspect_ratios}", flush=True)
     if is_distributed():
         model = DistributedDataParallel(model, device_ids=[local_rank], output_device=local_rank)
 

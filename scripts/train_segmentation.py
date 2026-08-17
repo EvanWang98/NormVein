@@ -10,6 +10,7 @@ from pathlib import Path
 
 import numpy as np
 import torch
+from torch.cuda.amp import GradScaler, autocast
 from torch.utils.data import DataLoader, Subset
 
 from normvein.models.segmentation import (
@@ -89,7 +90,7 @@ def main() -> None:
     ).to(device)
     criterion = UNetBCEDiceLoss()
     optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
-    scaler = torch.amp.GradScaler("cuda", enabled=device.type == "cuda")
+    scaler = GradScaler(enabled=device.type == "cuda")
 
     for epoch in range(1, args.epochs + 1):
         model.train()
@@ -98,7 +99,7 @@ def main() -> None:
             images = images.to(device, non_blocking=True)
             masks = masks.to(device, non_blocking=True)
             optimizer.zero_grad(set_to_none=True)
-            with torch.amp.autocast(device.type, enabled=device.type == "cuda"):
+            with autocast(enabled=device.type == "cuda"):
                 loss = criterion(model(images), masks)
             scaler.scale(loss).backward()
             scaler.step(optimizer)
@@ -127,4 +128,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

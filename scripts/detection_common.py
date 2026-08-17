@@ -1,4 +1,3 @@
-import os
 from pathlib import Path
 
 
@@ -44,21 +43,3 @@ def find_dataset_dirs(dataset_root):
     images_dir = find_child_dir(root, ["raw_images", "Images", "images"])
     annotations_dir = find_child_dir(root, ["Annotations", "annotations"], xml_required=True)
     return root, images_dir, annotations_dir
-
-
-def custom_import_pythonpath():
-    parts = []
-    if Path("detector_pretrain").is_dir():
-        parts.append(".")
-    if Path("datasets").is_dir() and Path("models").is_dir():
-        parts.append("..")
-    existing = os.environ.get("PYTHONPATH")
-    if existing:
-        parts.append(existing)
-    seen = set()
-    unique = []
-    for part in parts:
-        if part and part not in seen:
-            unique.append(part)
-            seen.add(part)
-    return os.pathsep.join(unique)

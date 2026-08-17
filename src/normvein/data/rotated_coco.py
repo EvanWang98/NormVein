@@ -76,6 +76,7 @@ class FVSynRotatedCocoDataset(Dataset):
             candidates.extend([self.root_dir / path, self.root_dir.parent / path])
 
         if self.image_root is not None:
+            candidates.append(self.image_root / path)
             candidates.append(self.image_root / path.name)
             parts = [part for part in Path(raw).parts if part not in {".", ""}]
             lowered = [part.lower() for part in parts]

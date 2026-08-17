@@ -24,4 +24,4 @@ python scripts/verify_weights.py
 These are model-only artifacts produced by `scripts/prepare_release_weights.py`.
 The original full trainer checkpoints remain private and are never committed.
 The custom rotated YOLO-style artifact is not an Ultralytics YOLOv8 checkpoint.
-See `docs/MODELS.md` for known provenance discrepancies.
+See the main `README.md` for model provenance and reproduction notes.
