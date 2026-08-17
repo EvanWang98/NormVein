@@ -65,24 +65,13 @@ class CombinedMarginClassifier(nn.Module):
         return logits * self.scale
 
 
-def save_artifact(path: Path, model_id: str, model: nn.Module, epoch: int, args) -> None:
+def save_artifact(path: Path, model_id: str, model: nn.Module) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     artifact = {
         "format_version": 1,
         "model_id": model_id,
-        "task": "recognition",
-        "architecture": model_spec(model_id)["architecture"],
         "state_dict": {key: value.detach().cpu() for key, value in model.state_dict().items()},
-        "metadata": {
-            "format_version": 1,
-            "model_id": model_id,
-            "task": "recognition",
-            "dataset": "FingerVeinSyn-5M",
-            "source_epoch": epoch,
-            "input_size": list(model_spec(model_id)["input_size"]),
-            "embedding_dim": 512,
-            "training_args": vars(args),
-        },
+        "metadata": {"dataset": "FingerVeinSyn-5M"},
     }
     torch.save(artifact, path)
 
@@ -95,21 +84,18 @@ def main() -> None:
     parser.add_argument("--epochs", type=int)
     parser.add_argument("--batch-size", type=int, default=16)
     parser.add_argument("--workers", type=int, default=8)
-    parser.add_argument("--lr", type=float)
-    parser.add_argument("--weight-decay", type=float)
-    parser.add_argument("--seed", type=int, default=2048)
     parser.add_argument("--device", default="cuda")
     parser.add_argument("--output-dir", type=Path, default=Path("runs/recognition"))
     args = parser.parse_args()
 
-    random.seed(args.seed)
-    np.random.seed(args.seed)
-    torch.manual_seed(args.seed)
+    random.seed(2048)
+    np.random.seed(2048)
+    torch.manual_seed(2048)
     device = torch.device(args.device)
     epochs = args.epochs or DEFAULT_EPOCHS[args.model]
     is_convnext = args.model == "rec_convnext_small"
-    learning_rate = args.lr if args.lr is not None else (0.001 if is_convnext else 0.01)
-    weight_decay = args.weight_decay if args.weight_decay is not None else (0.1 if is_convnext else 5e-4)
+    learning_rate = 0.001 if is_convnext else 0.01
+    weight_decay = 0.1 if is_convnext else 5e-4
 
     payload = json.loads(args.manifest.read_text(encoding="utf-8"))
     num_classes = int(payload["num_identities"])
@@ -152,8 +138,8 @@ def main() -> None:
         scheduler.step()
         mean_loss = total_loss / max(len(loader), 1)
         print(f"epoch={epoch}/{epochs} loss={mean_loss:.6f} lr={scheduler.get_last_lr()[0]:.6g}")
-        output = args.output_dir / f"{args.model}_e{epoch:03d}.pth"
-        save_artifact(output, args.model, backbone, epoch, args)
+        output = args.output_dir / f"normvein_{args.model}.pth"
+        save_artifact(output, args.model, backbone)
 
 
 if __name__ == "__main__":

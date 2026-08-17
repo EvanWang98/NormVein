@@ -4,7 +4,6 @@
 from __future__ import annotations
 
 import argparse
-import json
 import random
 from pathlib import Path
 
@@ -49,17 +48,13 @@ def main() -> None:
     parser.add_argument("--epochs", type=int, default=10)
     parser.add_argument("--batch-size", type=int, default=8)
     parser.add_argument("--workers", type=int, default=8)
-    parser.add_argument("--lr", type=float, default=1e-4)
-    parser.add_argument("--weight-decay", type=float, default=1e-4)
-    parser.add_argument("--train-subset-ratio", type=float, default=0.1)
-    parser.add_argument("--seed", type=int, default=2048)
     parser.add_argument("--device", default="cuda")
     parser.add_argument("--output-dir", type=Path, default=Path("runs/segmentation"))
     args = parser.parse_args()
 
-    random.seed(args.seed)
-    np.random.seed(args.seed)
-    torch.manual_seed(args.seed)
+    random.seed(2048)
+    np.random.seed(2048)
+    torch.manual_seed(2048)
     config = TASKS[args.task]
     device = torch.device(args.device)
     dataset = FingerVeinSegmentationDataset(
@@ -71,8 +66,8 @@ def main() -> None:
         percentile_low=config["percentile_low"],
         percentile_high=config["percentile_high"],
     )
-    subset_count = max(1, round(len(dataset) * args.train_subset_ratio))
-    generator = torch.Generator().manual_seed(args.seed)
+    subset_count = max(1, round(len(dataset) * 0.1))
+    generator = torch.Generator().manual_seed(2048)
     indices = torch.randperm(len(dataset), generator=generator)[:subset_count].tolist()
     loader = DataLoader(
         Subset(dataset, indices),
@@ -89,7 +84,7 @@ def main() -> None:
         in_channels=1,
     ).to(device)
     criterion = UNetBCEDiceLoss()
-    optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=1e-4, weight_decay=1e-4)
     scaler = GradScaler(enabled=device.type == "cuda")
 
     for epoch in range(1, args.epochs + 1):
@@ -109,21 +104,11 @@ def main() -> None:
         artifact = {
             "format_version": 1,
             "model_id": config["model_id"],
-            "task": config["model_id"].replace("seg_", "").replace("_unet_r50", "_segmentation"),
-            "architecture": "U-Net (ResNet-50 encoder)",
             "state_dict": {key: value.detach().cpu() for key, value in model.state_dict().items()},
-            "metadata": {
-                "format_version": 1,
-                "model_id": config["model_id"],
-                "dataset": "FingerVeinSyn-5M",
-                "source_epoch": epoch,
-                "input_size": list(config["image_size"]),
-                "train_subset_ratio": args.train_subset_ratio,
-                "training_args": vars(args),
-            },
+            "metadata": {"dataset": "FingerVeinSyn-5M"},
         }
         args.output_dir.mkdir(parents=True, exist_ok=True)
-        torch.save(artifact, args.output_dir / f"{config['model_id']}_e{epoch:03d}.pth")
+        torch.save(artifact, args.output_dir / f"normvein_{config['model_id']}.pth")
 
 
 if __name__ == "__main__":

@@ -1,10 +1,1 @@
-# Model binaries are published as GitHub Release assets, not committed to Git.
-detection/*
-segmentation/*
-recognition/*
-
-!detection/.gitkeep
-!segmentation/.gitkeep
-!recognition/.gitkeep
-!README.md
-!manifest.template.yaml
+*.pth

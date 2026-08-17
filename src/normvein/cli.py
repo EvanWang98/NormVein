@@ -11,7 +11,7 @@ import torch
 from PIL import Image
 
 from .checkpoints import load_pretrained
-from .models import MODEL_SPECS, build_model, model_spec
+from .models import MODEL_SPECS, build_model
 from .preprocessing import preprocess_image
 
 
@@ -25,19 +25,19 @@ def resolve_device(value: str) -> torch.device:
 
 def load_model(model_id: str, checkpoint: Path, device: torch.device):
     model = build_model(model_id)
-    model, artifact = load_pretrained(
+    model, _ = load_pretrained(
         model,
         checkpoint,
         expected_model_id=model_id,
         map_location="cpu",
     )
     model.to(device).eval()
-    return model, artifact
+    return model
 
 
 def recognize(args: argparse.Namespace) -> None:
     device = resolve_device(args.device)
-    model, artifact = load_model(args.model, args.checkpoint, device)
+    model = load_model(args.model, args.checkpoint, device)
     tensor = preprocess_image(args.input, args.model).unsqueeze(0).to(device)
     with torch.inference_mode():
         embedding = model(tensor).float()
@@ -45,80 +45,38 @@ def recognize(args: argparse.Namespace) -> None:
     output = embedding[0].cpu().numpy()
     args.output.parent.mkdir(parents=True, exist_ok=True)
     np.save(args.output, output)
-    print(
-        json.dumps(
-            {
-                "model_id": artifact["model_id"],
-                "input": str(args.input),
-                "output": str(args.output),
-                "shape": list(output.shape),
-                "l2_norm": float(np.linalg.norm(output)),
-            },
-            indent=2,
-        )
-    )
+    print(args.output)
 
 
 def segment(args: argparse.Namespace) -> None:
     device = resolve_device(args.device)
-    model, artifact = load_model(args.model, args.checkpoint, device)
+    model = load_model(args.model, args.checkpoint, device)
     tensor = preprocess_image(args.input, args.model).unsqueeze(0).to(device)
     with torch.inference_mode():
         probability = torch.sigmoid(model(tensor))[0, 0].cpu().numpy()
-    mask = (probability >= args.threshold).astype(np.uint8) * 255
+    mask = (probability >= 0.5).astype(np.uint8) * 255
     args.output.parent.mkdir(parents=True, exist_ok=True)
     Image.fromarray(mask, mode="L").save(args.output)
-    print(
-        json.dumps(
-            {
-                "model_id": artifact["model_id"],
-                "input": str(args.input),
-                "output": str(args.output),
-                "threshold": args.threshold,
-                "foreground_ratio": float((mask > 0).mean()),
-            },
-            indent=2,
-        )
-    )
-
-
-def _prediction_records(output: dict, score_threshold: float, top_k: int):
-    scores = output.get("scores", torch.empty(0))
-    order = torch.argsort(scores, descending=True)[:top_k]
-    records = []
-    for tensor_index in order:
-        index = int(tensor_index.item())
-        score = float(scores[index].item())
-        if score < score_threshold:
-            continue
-        rboxes = output.get("bbox_cxcywha", output.get("rboxes"))
-        record = {
-            "score": score,
-            "label": int(output.get("labels", torch.ones_like(scores, dtype=torch.long))[index].item()),
-            "bbox_xyxy": [float(v) for v in output["boxes"][index].tolist()],
-        }
-        if rboxes is not None and len(rboxes) > index:
-            record["bbox_cxcywha"] = [float(v) for v in rboxes[index].tolist()]
-        records.append(record)
-    return records
+    print(args.output)
 
 
 def detect(args: argparse.Namespace) -> None:
     device = resolve_device(args.device)
-    model, artifact = load_model(args.model, args.checkpoint, device)
+    model = load_model(args.model, args.checkpoint, device)
     tensor = preprocess_image(args.input, args.model).to(device)
     with torch.inference_mode():
         output = model([tensor])[0]
-    records = _prediction_records(output, args.score_threshold, args.top_k)
-    result = {
-        "model_id": artifact["model_id"],
-        "input": str(args.input),
-        "input_size": list(model_spec(args.model)["input_size"]),
-        "detections": records,
-    }
+    detection = None
+    if len(output["boxes"]):
+        index = int(torch.argmax(output["scores"]).item())
+        rboxes = output.get("bbox_cxcywha", output.get("rboxes"))
+        detection = {"bbox_xyxy": [float(value) for value in output["boxes"][index].tolist()]}
+        if rboxes is not None:
+            detection["bbox_cxcywha"] = [float(value) for value in rboxes[index].tolist()]
+    result = {"detection": detection}
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
-    print(json.dumps(result, indent=2))
+    print(args.output)
 
 
 def add_common(parser: argparse.ArgumentParser, models: list[str]) -> None:
@@ -143,13 +101,10 @@ def build_parser() -> argparse.ArgumentParser:
 
     seg = subparsers.add_parser("segment", help="write a binary segmentation mask")
     add_common(seg, segmentation_models)
-    seg.add_argument("--threshold", type=float, default=0.5)
     seg.set_defaults(func=segment)
 
     det = subparsers.add_parser("detect", help="write rotated ROI detections as JSON")
     add_common(det, detection_models)
-    det.add_argument("--score-threshold", type=float, default=0.25)
-    det.add_argument("--top-k", type=int, default=5)
     det.set_defaults(func=detect)
     return parser
 
@@ -161,4 +116,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

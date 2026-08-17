@@ -607,16 +607,12 @@ def build_model(model_name, encoder_weights, use_smp=False, pretrained_dir="./we
     if model is not None:
         return model
     if model_name == "unetpp_resnet50":
-        print("[info] Using local fallback UNet++ with torchvision ResNet50 encoder.")
         return UNetPlusPlusResNet50(num_classes=1, weights_mode=encoder_weights, pretrained_dir=pretrained_dir, allow_weight_download=allow_weight_download, in_channels=in_channels)
     if model_name == "unet_resnet50":
-        print("[info] Using local fallback UNet with torchvision ResNet50 encoder.")
         return UNetResNet50(num_classes=1, weights_mode=encoder_weights, pretrained_dir=pretrained_dir, allow_weight_download=allow_weight_download, in_channels=in_channels)
     if model_name == "unet_resnet34":
-        print("[info] Using local fallback UNet with torchvision ResNet34 encoder.")
         return UNetResNet34(num_classes=1, weights_mode=encoder_weights, pretrained_dir=pretrained_dir, allow_weight_download=allow_weight_download, in_channels=in_channels)
     if model_name == "deeplabv3plus_mobilenetv3":
-        print("[info] Using local fallback DeepLabV3+ with torchvision MobileNetV3-Large encoder.")
         return DeepLabV3PlusMobileNetV3(num_classes=1, weights_mode=encoder_weights, pretrained_dir=pretrained_dir, allow_weight_download=allow_weight_download, in_channels=in_channels)
     raise ValueError(f"Unsupported model: {model_name}")
 

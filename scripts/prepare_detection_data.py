@@ -6,10 +6,43 @@ from pathlib import Path
 
 from PIL import Image
 
-from detection_common import find_dataset_dirs, project_path, with_prefix
-
 IMAGE_EXTS = [".png", ".jpg", ".jpeg", ".bmp", ".tif", ".tiff"]
 CATEGORY = {"id": 1, "name": "finger", "supercategory": "finger"}
+
+
+def project_path(path):
+    text = Path(path).as_posix()
+    if text == ".":
+        return "."
+    if text.startswith(("./", "../", "/")) or Path(path).is_absolute():
+        return text
+    return f"./{text}"
+
+
+def with_prefix(prefix, relative_path):
+    prefix = str(prefix).replace("\\", "/").rstrip("/")
+    if prefix and not prefix.startswith(("./", "../", "/")):
+        prefix = f"./{prefix}"
+    relative_path = Path(relative_path).as_posix().lstrip("/")
+    return f"{prefix}/{relative_path}" if prefix else relative_path
+
+
+def find_child_dir(root, names, xml_required=False):
+    candidates = [root / name for name in names if (root / name).is_dir()]
+    if xml_required:
+        for candidate in candidates:
+            if any(path.suffix.lower() == ".xml" for path in candidate.rglob("*")):
+                return candidate
+    if candidates:
+        return candidates[0]
+    raise FileNotFoundError(f"Missing one of {names} under {root}")
+
+
+def find_dataset_dirs(dataset_root):
+    root = Path(dataset_root)
+    images_dir = find_child_dir(root, ["raw_images", "Images", "images"])
+    annotations_dir = find_child_dir(root, ["Annotations", "annotations"], xml_required=True)
+    return root, images_dir, annotations_dir
 
 
 def iter_xml_files(ann_dir):

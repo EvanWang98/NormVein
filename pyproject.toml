@@ -18,19 +18,11 @@ dependencies = [
   "Pillow>=9.0",
   "torch>=2.0",
   "torchvision>=0.15",
+  "timm>=0.9",
 ]
-
-[project.optional-dependencies]
-convnext = ["timm>=0.9"]
-train = ["tensorboard>=2.12", "tqdm>=4.65"]
-test = ["pytest>=7.0"]
-all = ["timm>=0.9", "tensorboard>=2.12", "tqdm>=4.65", "pytest>=7.0"]
 
 [project.scripts]
 normvein = "normvein.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
-
-[tool.pytest.ini_options]
-testpaths = ["tests"]
