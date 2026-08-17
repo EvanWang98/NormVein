@@ -7,6 +7,7 @@ name = "normvein"
 version = "0.1.0"
 description = "Large-scale synthetic pretraining for finger-vein detection, segmentation, and recognition"
 readme = "README.md"
+license = {file = "LICENSE"}
 requires-python = ">=3.9"
 authors = [
   {name = "Yifan Wang"},
@@ -33,4 +34,3 @@ where = ["src"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-

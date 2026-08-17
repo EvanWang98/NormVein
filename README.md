@@ -43,7 +43,7 @@ implementation in this repository; it is **not** an Ultralytics YOLOv8 checkpoin
 Python 3.9+ and PyTorch 2.x are recommended.
 
 ```bash
-git clone https://github.com/<OWNER>/NormVein.git
+git clone https://github.com/EvanWang98/NormVein.git
 cd NormVein
 pip install -e .[all]
 python scripts/verify_weights.py
